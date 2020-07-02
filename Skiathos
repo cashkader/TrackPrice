@@ -1,0 +1,31 @@
+import bs4, requests, smtplib, schedule, time
+
+def getSkiathosPrice (productUrl):
+    res = requests.get(productUrl)
+    res.raise_for_status()
+
+    soup = bs4.BeautifulSoup(res.text, features = "lxml")
+    elems = soup.select('#exact_outbound_fligh_table > div.select-flights.js-select-box > div > div.select-item-simple > div.select-tariff.js-select-tariff.select-tariff--active > div > label > span > span > span.radiobutton-text > span.js-currency-amount')
+    return elems[0].text.strip()
+
+terminate = False
+
+def Notify():
+    price = getSkiathosPrice('https://ibe.cyprusairways.com/air?execution=e1s1&ibe_conversation=2.25:6a6b5791-62b3-4c49-bfe1-045878e6ddb3&id=deeplink&RDMPTN=false&DD1=2020-08-03&CUR=EUR&AA1=JSI&TI=0&DA1=LCA&LAN=EL&FSC1=1&TA=1&CP=F&TC=0&SUP=SITA')
+    print (price)
+    if float(price) <100:
+        conn = smtplib.SMTP('smtp.gmail.com', 587)
+        conn.ehlo()
+        conn.starttls()
+        conn.login('cashcadeur@gmail.com', 'mr619619')
+        conn.sendmail('cashcadeur@gmail.com', ['maria.sotiriou9@gmail.com', 'markrigos@gmail.com'], 'Subject: Skiathos tickets got cheap!\n\nThe Economy Basic ticket price to Skiathos is EUR ' + price + '\n\nYou can book you tickets through the following link:\nhttps://ibe.cyprusairways.com/air?execution=e1s1&ibe_conversation=2.25:6a6b5791-62b3-4c49-bfe1-045878e6ddb3&id=deeplink&RDMPTN=false&DD1=2020-08-03&CUR=EUR&AA1=JSI&TI=0&DA1=LCA&LAN=EL&FSC1=1&TA=1&CP=F&TC=0&SUP=SITA') 
+        global terminate
+        terminate = True
+
+schedule.every(5).minutes.do(Notify)
+
+while not terminate:
+    schedule.run_pending()
+    time.sleep(1)
+
+    
