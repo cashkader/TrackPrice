@@ -1,0 +1,32 @@
+import bs4, requests, smtplib, schedule, time
+
+telegram_token = '6178982237:AAEvE8e0J5pH9HYhyB0lE2LVjQHAC31HWPA'
+telegram_chat_id = '975793770'
+
+def getPrice (productUrl):
+    res = requests.get(productUrl)
+    res.raise_for_status()
+    soup = bs4.BeautifulSoup(res.text, features = "lxml")
+    elems = soup.select('#product-638586 > div.single-product-wrapper.row > div.product-actions-wrapper > div > p.price > span > ins > span > bdi')
+    return elems[0].text.strip()
+
+terminate = False
+
+def Notify():
+    price = getPrice('https://techmobile.gr/product/nb-asus-m1603qa-mb511w-r5-5600h-16-0/')
+    price = float(price.replace(",",".").replace("€",""))
+    if price <650:
+        global terminate
+        terminate = True
+        payload = {
+            'chat_id': telegram_chat_id,
+            'text': price,
+            'parse_mode': 'HTML'
+        }
+        return requests.post('https://api.telegram.org/bot{token}/sendMessage'.format(token=telegram_token), data=payload).content
+
+schedule.every(10).minutes.do(Notify)
+
+while not terminate:
+    schedule.run_pending()
+    time.sleep(1)
